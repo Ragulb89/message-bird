@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mbweb
+  labels:
+    app: mb
+spec:
+  selector:
+    matchLabels:
+      app: mb
+      tier: web
+  template:
+    metadata:
+      labels:
+        app: mb
+        tier: web
+    spec:
+      containers:
+      - name: web
+        image: gcr.io/ktestdec/web:v1
+        ports:
+        - containerPort: 80

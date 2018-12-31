@@ -1,0 +1,93 @@
+---
+- name: download
+  get_url:
+    url: "{{ item }}"
+    dest: /tmp
+    mode: 0777
+  with_items:
+    - https://github.com/prometheus/prometheus/releases/download/v2.6.0-rc.0/prometheus-2.6.0-rc.0.linux-amd64.tar.gz
+    - https://github.com/prometheus/node_exporter/releases/download/v0.17.0/node_exporter-0.17.0.linux-amd64.tar.gz
+- name: untar
+  unarchive:
+    src: "{{ item }}"
+    dest: /tmp
+    remote_src: yes
+  with_items:
+    - /tmp/prometheus-2.6.0-rc.0.linux-amd64.tar.gz
+    - /tmp/node_exporter-0.17.0.linux-amd64.tar.gz
+- name: create users and groups
+  group:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - node_exporter
+    - prometheus
+  become: yes
+- name: create user
+  user:
+    name: "{{ item.name }}"
+    shell: /bin/false
+    group: "{{ item.group }}"
+    state: present
+  become: yes
+  with_items:
+    - { name: 'prometheus', group: 'prometheus' }
+    - { name: 'node_exporter', group: 'node_exporter' }
+- name: copying command to system bin
+  copy:
+    src: "{{ item }}"
+    dest: /usr/local/bin
+    owner: root
+    group: root
+    mode: 0655
+    remote_src: yes
+  with_items:
+    - /tmp/prometheus-2.6.0-rc.0.linux-amd64/promtool
+    - /tmp/prometheus-2.6.0-rc.0.linux-amd64/prometheus
+    - /tmp/node_exporter-0.17.0.linux-amd64/node_exporter
+  become: yes
+- name: create prometheus directory and required services
+  file:
+    path: "{{ item }}"
+    owner: prometheus
+    group: prometheus
+    state: directory
+    mode: 0775
+    recurse: yes
+  become: yes
+  with_items:
+    - /etc/prometheus
+    - /var/lib/prometheus
+- name: copy systemd
+  copy:
+    src : "{{ item.src}}"
+    dest:  "{{ item.dest }}"
+  with_items:
+    - { src: 'prometheus.service' , dest: '/usr/lib/systemd/system/' }
+    - { src: 'node_exporter.service' , dest: '/usr/lib/systemd/system/' }
+    - { src: 'prometheus.yml' , dest: '/etc/prometheus' }
+  become: yes
+- name: change the public ip
+  replace:
+    path: /etc/prometheus/prometheus.yml
+    regexp: 'localhost'
+    replace: "{{ inventory_hostname }}"
+  become: yes
+- name: prepare for startup
+  command: cp -r "{{ item }}" /etc/prometheus
+  become: yes
+  with_items:
+    - /tmp/prometheus-2.6.0-rc.0.linux-amd64/console_libraries
+    - /tmp/prometheus-2.6.0-rc.0.linux-amd64/consoles
+- name: launch prometheus
+  command: "{{ item }}"
+  become: yes
+  with_items:
+    - systemctl daemon-reload
+    - systemctl enable prometheus
+    - systemctl enable node_exporter
+    - systemctl start prometheus
+    - systemctl start node_exporter
+- name : final message
+  debug:
+    msg: "connect to http://{{ inventory_hostname }}:9090/graph & http://{{ inventory_hostname }}:9090/metrics for metrics and http://{{ inventory_hostname }}:9100 for node_exporter"

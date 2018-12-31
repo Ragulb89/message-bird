@@ -1,0 +1,20 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    instance : "t2.micro"
+    sg: "mb_sg"
+    ami_id: "ami-011b3ccf1bd6db744"
+    kp_mb: "packer-key"
+    rg_mb: "us-east-1"
+    ct_mb: "1"
+  tasks:
+    - import_tasks: tasks/ec2-install_v2.yml
+- hosts: prometheus
+  remote_user: ec2-user
+  gather_facts: true
+  vars:
+    ansible_ssh_private_key_file: /Users/rbal10/Downloads/packer-key.pem
+  tasks:
+    - import_tasks: tasks/prometheus_deploy.yml

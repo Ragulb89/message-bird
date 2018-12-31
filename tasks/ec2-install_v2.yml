@@ -1,0 +1,64 @@
+---
+- name: create mb_sg
+  ec2_group:
+    name: "{{ sg }}"
+    description: Security Group for message bird
+    region: "{{ rg_mb }}"
+    vpc_id: "vpc-7db6c005"
+    rules:
+      - proto:            tcp
+        from_port:       22
+        to_port:         22
+        cidr_ip:         0.0.0.0/0
+
+      - proto:           tcp
+        from_port:       80
+        to_port:         80
+        cidr_ip:         0.0.0.0/0
+
+      - proto:          tcp
+        from_port:    443
+        to_port:      443
+        cidr_ip:      0.0.0.0/0
+
+      - proto:        tcp
+        from_port:    9090
+        to_port:      9090
+        cidr_ip:      0.0.0.0/0
+
+      - proto:        tcp
+        from_port:    9100
+        to_port:      9100
+        cidr_ip:      0.0.0.0/0
+    rules_egress:
+      - proto:        all
+        cidr_ip:      0.0.0.0/0
+  register:           sg_out
+  delegate_to:        localhost
+- name:                   create ec2
+  ec2:
+    group:            "{{ sg }}"
+    instance_type:    "{{ instance }}"
+    image:            "{{ ami_id }}"
+    wait:             true
+    region:           "{{ rg_mb }}"
+    keypair:          "{{ kp_mb }}"
+    count:            "{{ ct_mb }}"
+    assign_public_ip: yes
+    vpc_subnet_id:    subnet-05c316b06b2f11b84
+  delegate_to:        localhost
+  register:           ec2
+  tags:
+        - ec2-create
+- name:                   adding the ec2 to host file
+  add_host:
+    name:                 "{{ item.public_ip }}"
+    groups:               prometheus
+  with_items:             "{{ ec2.instances }}"
+- name:                   wait for the server to comeup
+  wait_for:
+    host:                 "{{ item.public_ip }}"
+    port:                 22
+    state:                started
+  with_items:           "{{ ec2.instances }}"
+
