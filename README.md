@@ -34,6 +34,7 @@ region: https://www.googleapis.com/compute/v1/projects/ktestdec/regions/us-centr
 selfLink: https://www.googleapis.com/compute/v1/projects/ktestdec/regions/us-central1/addresses/mb-ip
 status: RESERVED
 
+`kubectl apply -f mb-deployment.yml`
 `kubectl apply -f mb-service.yml`
 service/mbweb created
 `kubectl get service`
@@ -45,13 +46,13 @@ mbweb        LoadBalancer   10.47.249.117   <pending>     80:32557/TCP   6s
 Exercise-2:
 
 Run the ansible-playbook as below
-
+```
 `ansible-playbook deploy.yml`
 
 TASK [final message] *******************************************************************************************************************************************************************************************
 ok: [35.153.126.58] => {
     "msg": "connect to http://35.153.126.58:9090/graph & http://35.153.126.58:9090/metrics for metrics and http://35.153.126.58:9100 for node_exporter"
 }
-
+```
 Note: Promethemus 2.6 is installed, but http_total_request works perfectly with 2.2 version.
 
