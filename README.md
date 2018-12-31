@@ -8,7 +8,7 @@ exercise-2: This is done using ansible playbook in AWS.
 exercise-1:
 
 please follow the below steps, once docker image is pushed to GCR registry.
-
+```
 `gcloud container clusters create mbex1`
 
 Creating cluster mbex1 in us-central1-b...done.
@@ -40,7 +40,7 @@ service/mbweb created
 NAME         TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
 kubernetes   ClusterIP      10.47.240.1     <none>        443/TCP        7m
 mbweb        LoadBalancer   10.47.249.117   <pending>     80:32557/TCP   6s
-
+```
 
 Exercise-2:
 
